@@ -1,0 +1,155 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, Helvetica, sans-serif;
+    /* font-family: 'Courier New', Courier, monospace; */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+#wrapper {
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 50px 0;
+}
+
+#rangeHold {
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+#geocoder {
+    z-index: 1;
+    margin: 0 50px 0 50px;
+    display: inline-block;
+}
+
+.mapboxgl-ctrl-geocoder {
+    min-width: 100%;
+    box-shadow: 2px 2px 5px rgb(0 0 0 / 10%) !important;
+    color: #757575;
+    background-color: #efefef;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, Helvetica, sans-serif;
+    /* font-family: 'Courier New', Courier, monospace; */
+}
+
+h2 {
+    margin: 15px 50px;
+}
+
+#btnHold {
+    box-sizing: border-box;
+    margin-right: 50px;
+    box-shadow: 2px 2px 5px rgb(0 0 0 / 30%);
+    float: right;
+    border-radius: 4px;
+    background-color: #efefef;
+}
+
+#btnHold button {
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, Helvetica, sans-serif;
+    /* font-family: 'Courier New', Courier, monospace; */
+    border: none;
+    height: 36px;
+    margin: 0 -1px;
+    width: 115px;
+    padding: 6px 20px;
+    color: #555555;
+    transition: all .25s;
+    font-size: 0.8em;
+    border-radius: 0px;
+    background: none;
+    border-right: 1px solid #d3d3d3;
+}
+
+#btnHold button:last-child {
+    border-right: none;
+}
+
+#btnHold button:hover {
+    cursor: pointer;
+    color: #111111;
+}
+
+canvas {
+    display: block;
+    padding: 0 50px;
+    box-sizing: border-box;
+    z-index: -1;
+}
+
+#range {
+    position: relative;
+    margin-bottom: 50px;
+}
+
+#rangeColor {
+    position: absolute;
+    top: 30px;
+}
+
+#rangeHold {
+    display: block;
+    margin: auto;
+}
+
+.range-body {
+    fill: #666;
+}
+
+#sunsetLabel, #noonLabel, #sunriseLabel {
+    font-family: sans-serif;
+}
+
+.range-dragger {
+    fill: #333333;
+    cursor: pointer;
+}
+
+.range-label {
+    fill: #333333;
+    font-weight: 500;
+    text-anchor: middle;
+    font-size: 1em;
+    pointer-events: none;
+    font-weight: 100;
+}
+
+#attribution {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    font-size: 14px;
+    color: #111111;
+}
+
+#attribution a {
+    text-decoration: none;
+    color: #111111;
+}
+
+
+@media (max-width: 900px) {
+
+    h2 {
+        margin: calc(40%) 50px 0;
+    }
+
+    #rangeHold {
+        /* height: 100vh; */
+        top:35%;
+    }
+
+    #btnHold {
+        display: none;
+    }
+
+    #geocoder {
+        display: block;
+        position: absolute;
+        top: 70px;
+    }
+}

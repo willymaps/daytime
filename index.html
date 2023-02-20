@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Daytime</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js">
+  </script>
+  <link rel="stylesheet"
+    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+  <link rel="stylesheet"
+    href="./css/daytime.css" type="text/css">
+</head>
+
+<body>
+
+<div id="wrapper">
+  <div id="geocoder"></div>
+    <div id="btnHold">
+      <button class="cityBtn" data-lng="-79.362257" data-lat="43.671495">Toronto</button>
+      <button class="cityBtn" data-lng="-79.532534" data-lat="8.981979">Panama</button>
+      <button class="cityBtn" data-lng="24.931755" data-lat="60.185404">Helsinki</button>
+      <button class="cityBtn" data-lng="103.807978" data-lat="1.354616">Singapore</button>
+    </div>
+  <div id="rangeHold">
+    <h2 id="placeName">Toronto, Ontario, Canada</h2>
+    <div id="range">
+      <canvas id="rangeColor"></canvas>
+    </div>
+  </div>
+
+  <div id="attribution">
+    Design and code: <a id="attributionLink" href="https://www.formerspatial.com/" target="_blank" alt="William Davis portfolio">William
+      Davis</a>
+  </div>
+</div>
+
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.2.1/luxon.min.js"></script>
+<script src="./js/suncalc.js"></script>
+<script>
+
+const placeName = document.getElementById("placeName");
+const mapCenter = [-79.362257, 43.671495];
+const hoursColors = ["#152432", "#355C7D", "#6C5B7B", "#F67280", "#F8B195", "#F67280", "#6C5B7B", "#355C7D", "#152432"];
+const hoursReq = ['nightEnd', 'dawn', 'sunrise', 'solarNoon', 'sunset', 'dusk', 'night'];
+
+let initBuild = true;
+let percDate, hoursPerc, timeZones, pctRise, pctNoon, pctSet;
+let handle_radius = 10,
+  handle_start_val = 50,
+  handle_padding = 10,
+  slider_height = 50,
+  axis_height = 20;
+
+//Plot SVG
+const width = window.innerWidth;
+const height = handle_radius * 2 + slider_height + handle_padding + axis_height;
+const margin = {
+  top: 0,
+  right: 50,
+  bottom: axis_height,
+  left: 50
+};
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
+
+const svg = d3.select('#range')
+    .append('svg')
+      .attr('viewBox', [0, 0, width, height])
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr("width", width)
+      .attr("height", height)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
+
+const accessToken =
+  'pk.eyJ1Ijoid2lsbGlhbS1kYXZpcyIsImEiOiJja2tiYWtvbWcwMmtzMnBvajh3M2kxZGRuIn0.GeROaHKn2Gbvsg1e8buJEw';
+
+const geocoder = new MapboxGeocoder({
+  accessToken: accessToken,
+  types: 'country,region,place',
+  limit: 2,
+  collapsed: true
+});
+
+geocoder.addTo('#geocoder');
+
+geocoder.on('result', (e) => {
+  placeName.innerHTML = e.result.place_name;
+  newPosition(e.result.center[0], e.result.center[1]);
+});
+
+function ramp(color, n = 1024) {
+  const canvas = document.getElementById('rangeColor');
+  const context = canvas.getContext("2d");
+  canvas.width = n;
+  canvas.height = 1;
+  canvas.style.width = "calc(100%)";
+  canvas.style.height = "40px";
+  canvas.style.imageRendering = "pixelated";
+  for (let i = 0; i < n; ++i) {
+    context.fillStyle = color(i / (n - 1));
+    context.fillRect(i, 0, 1, 1);
+  }
+}
+
+function newPosition(lng, lat) {
+  getTimeZone(lng, lat).then(timeZone => {
+    const hours = generateScales(timeZone);
+    hours.then(perc => {
+      buildScales(perc)
+    });
+  });
+}
+
+async function getTimeZone(lng, lat) {
+  // create variables that will hold the
+  // user's latitude and longitude data
+  const longitude = lng;
+  const latitude = lat;
+
+  // use the Mapbox Tilequery API to query the timezone tileset
+  const query = await fetch(
+    `https://api.mapbox.com/v4/examples.4ze9z6tv/tilequery/${longitude},${latitude}.json?access_token=${accessToken}`, {
+      method: 'GET'
+    }
+  );
+
+  const data = await query.json();
+
+  try {
+    // grab the timezone from the resulting JSON
+    const userTimeZone = data.features[0].properties.TZID;
+    return {
+      lng: lng,
+      lat: lat,
+      timezone: userTimeZone
+    }
+  }
+  catch {
+    console.log('Could not find location. Try replacing the accessToken with your own.');
+    return {
+      lng: mapCenter[0],
+      lat: mapCenter[1],
+      timezone: 'America/Toronto'
+    }
+  }
+}
+
+async function generateScales(zone) {
+  
+  const DateTime = luxon.DateTime;
+  const date = DateTime.now().startOf('day');
+  const dateInZone = DateTime.now().setZone(zone.timezone);
+
+  const dateHour = dateInZone.hour;
+  const dateMinute = dateInZone.minute;
+  const totalDate = dateHour * 60 + dateMinute;
+  percDate = totalDate / 1440;
+
+  const times = await SunCalc.getTimes(date, zone.lat, zone.lng);
+
+  hoursPerc = [0];
+  const timeNoon = new Date(times['solarNoon']);
+
+  const noonDateTime = DateTime.fromJSDate(timeNoon);
+  const noonHour = noonDateTime.setZone(zone.timezone).hour;
+  const noonMinute = noonDateTime.setZone(zone.timezone).minute;
+  const totalNoon = noonHour * 60 + noonMinute;
+  const percNoon = totalNoon / 1440;
+
+  const midDay = percNoon;
+  handle_start_val = (percDate * 100).toFixed(2);
+
+  for (let i = 0; i < hoursReq.length; i++) {
+    const d = times[hoursReq[i]];
+    const currentTime = new Date(d);
+    const currentDateTime = DateTime.fromJSDate(currentTime);
+    const diff = noonDateTime.diff(currentDateTime, ['hours']);
+
+    let pctDayElapsed
+    const halved = diff.hours / 24;
+    if (halved < percNoon) {
+      pctDayElapsed = percNoon - halved;
+    } else {
+      pctDayElapsed = percNoon + halved;
+    }
+    hoursPerc.push(pctDayElapsed);
+  }
+  hoursPerc.push(1);
+
+  ramp(d3.scaleLinear()
+    .domain(hoursPerc)
+    .range(hoursColors)
+    .interpolate(d3.interpolateRgb.gamma(2.2)));
+
+  return hoursPerc;
+}
+
+function buildScales(hours) {
+  const range_width = innerWidth
+  const range_height = innerHeight
+  const range_svg = svg;
+  const range_x = d3.scaleLinear()
+    .domain([0, 100])
+    .range([0, range_width]);
+
+  const sunriseLabel = range_width * hours[3];
+  const sunsetLabel = range_width * hours[5];
+  const noonLabel = range_width * hours[4];
+  const midDayMinutes = ((86400 * hours[4]) / 60).toFixed(0);
+  const dateMinutes = ((86400 * percDate) / 60).toFixed(0);
+
+  pctRise = hours[2];
+  pctNoon = hours[4];
+  pctSet = hours[6];
+
+  if (initBuild) {
+    initBuild = false;
+    range_svg.append("text")
+      .attr("id", "sunriseLabel")
+      .attr("class", "x label")
+      .attr("text-anchor", "middle")
+      .attr("x", sunriseLabel)
+      .attr("transform", "translate(0, " + (range_height+20) + ")")
+      .text("☀↑");
+
+    range_svg.append("text")
+      .attr("id", "sunsetLabel")
+      .attr("class", "x label")
+      .attr("text-anchor", "middle")
+      .attr("x", sunsetLabel)
+      .attr("transform", "translate(0, " + (range_height+20) + ")")
+      .text("☀↓");
+
+    range_svg.append("text")
+      .attr("id", "noonLabel")
+      .attr("class", "x label")
+      .attr("text-anchor", "middle")
+      .attr("x", noonLabel)
+      .attr("transform", "translate(0, " + (range_height+20) + ")")
+      .text("☀");
+
+    const svgFilter = svg.append('filter')
+      .attr('id', 'circleBlur')
+
+    svgFilter.append('feGaussianBlur')
+      .attr('in', 'SourceGraphic')
+      .attr('stdDeviation', 2.2)
+
+    // Create the svg:defs element and the main gradient definition.
+    const svgDefs = svg.append('defs');
+
+    const mainGradient = svgDefs.append('linearGradient')
+        .attr('id', 'mainGradient')
+        .attr('gradientTransform', 'rotate(90)')
+
+    // Create the stops of the main gradient. Each stop will be assigned
+    // a class to style the stop using CSS.
+    mainGradient.append('stop')
+        .attr('id', 'stopTop')
+        .attr('offset', '50%')
+        .attr('stop-color', 'rgba(255,255,255,1)')
+
+    mainGradient.append('stop')
+        .attr('id', 'stopBottom')
+        .attr('offset', '0%')
+        .attr('stop-color', 'rgba(0,0,0,0.2)')
+
+    // the handle
+    svg.append("circle")
+      .attr("id", "sliderHandleHidden")
+      .attr("class", "range-dragger range-handle")
+      .attr("cx", range_x(handle_start_val))
+      .attr("cy", 50)
+      .attr("r", (handle_radius*2.5))
+      .style('fill', 'rgba(255,255,255,0)')
+      .call(d3.drag()
+        .on("drag", dragged)
+    );
+
+    svg.append("circle")
+      .attr("id", "sliderHandleBlur")
+      .attr("class", "range-dragger range-handle")
+      .attr("cx", range_x(handle_start_val))
+      .attr("cy", 50)
+      .attr("r", (handle_radius*1.25))
+      .style('fill', 'rgba(255,255,255,1)')
+      .attr('filter', 'url(#circleBlur)')
+      .style('fill', 'url(#mainGradient)')
+      .style('pointer-events', 'none');
+
+    // the handle
+    svg.append("circle")
+      .attr("id", "sliderHandle")
+      .attr("class", "range-dragger range-handle")
+      .attr("cx", range_x(handle_start_val))
+      .attr("cy", 50)
+      .attr("r", handle_radius)
+      .style('fill', 'url(#mainGradient)')
+      // .style('stroke', 'rgba(0,0,0,0.2)')
+      .style('pointer-events', 'none');
+
+    // the label
+    svg.append("text")
+      .attr("id", "sliderText")
+      .attr("class", "range-label")
+      .attr("x", range_x(handle_start_val))
+      .attr("y", 10)
+      .attr("dy", ".3em")
+      .text(convertMinsToHrsMins(dateMinutes));
+
+  } else {
+    d3.select('#sunriseLabel')
+      .transition()
+      .duration(500)
+      .attr("x", sunriseLabel);
+
+    d3.select('#sunsetLabel')
+      .transition()
+      .duration(500)
+      .attr("x", sunsetLabel);
+
+    d3.select('#noonLabel')
+      .transition()
+      .duration(500)
+      .attr("x", noonLabel);
+
+    d3.select('#sliderHandleHidden')
+      .transition()
+      .duration(500)
+      .attr("cx", range_x(handle_start_val))
+
+    d3.select('#sliderHandleBlur')
+      .transition()
+      .duration(500)
+      .attr("cx", range_x(handle_start_val))
+
+    d3.select('#sliderHandle')
+      .transition()
+      .duration(500)
+      .attr("cx", range_x(handle_start_val))
+
+    d3.select(".range-label")
+      .transition()
+      .duration(500)
+      .attr("x", range_x(handle_start_val))
+      .text(convertMinsToHrsMins(dateMinutes));
+  }
+
+  changeBackgroundColor(percDate);
+  changeTextColor(pctRise, pctNoon, pctSet, percDate);
+
+
+  function calcPointerPoints(handle_val) {
+    const point_c = range_x(handle_val) + "," + (range_height - slider_height);
+    const point_a = (range_x(handle_val) - (handle_radius / 4)) + "," + (range_height - slider_height -
+      handle_padding - (handle_radius / 10));
+    const point_b = (range_x(handle_val) + (handle_radius / 4)) + "," + (range_height - slider_height -
+      handle_padding - (handle_radius / 10));
+    return point_a + " " + point_b + " " + point_c;
+  }
+
+  function dragged() {
+    let coordinates = [0, 0];
+    coordinates = d3.pointer(event);
+
+    let x = coordinates[0]-50;
+    x = x > range_width ? range_width :
+      x < 0 ? 0 :
+      x;
+
+    // find the pct represented by the mouse position
+    const pct = range_x.invert(x);
+    const pctDec = pct * 0.01;
+    const totalMinutes = ((86400 * pctDec) / 60).toFixed(0);
+
+    range_svg.selectAll(".range-handle")
+      .attr("cx", range_x(pct));
+
+    range_svg.select(".range-label")
+      .attr("x", range_x(pct))
+      .text(convertMinsToHrsMins(totalMinutes));
+
+    range_svg.select(".range-pointer")
+      .attr("points", calcPointerPoints(pct));
+
+    changeBackgroundColor(pctDec);
+    changeTextColor(pctRise, pctNoon, pctSet, pctDec);
+  }
+}
+
+
+const convertMinsToHrsMins = (mins) => {
+  let h = Math.floor(mins / 60);
+  let m = mins % 60;
+  h = h < 10 ? '0' + h : h; // (or alternatively) h = String(h).padStart(2, '0')
+  m = m < 10 ? '0' + m : m; // (or alternatively) m = String(m).padStart(2, '0')
+  return `${h}:${m}`;
+}
+
+function changeBackgroundColor(perc) {
+  const newColor = d3.scaleLinear()
+    .domain(hoursPerc)
+    .range(hoursColors)
+    .interpolate(d3.interpolateRgb.gamma(2.2))
+    (perc)
+  
+  const convertedColor = d3.hcl(newColor);
+
+  function darken(color, k = 1) {
+    const {l, c, h} = d3.lch(color);
+    return d3.lch(l - 25 * k, c, h);
+  }
+
+  function lighten(color, k = 1) {
+    const {l, c, h} = d3.lch(color);
+    return d3.lch(l + 10 * k, c, h);
+  }
+
+  document.body.style.background = 'linear-gradient(' + lighten(newColor) + ', ' + newColor + ', ' + darken(newColor) + ')';
+}
+
+
+function changeTextColor(rise, noon, set, current) {
+  const dayTimePerc = (set-rise)*current;
+  const rate = 0.025;
+
+  let range = set - (set-rate)
+  let correctedStartValue = current - (set-rate)
+  let percentage = (correctedStartValue * 100) / range 
+  let newPerc = (100-percentage).toFixed(2) + '%';
+
+  if (current < noon) {
+    range = (rise+rate) - rise;
+    correctedStartValue = current - rise;
+    percentage = (correctedStartValue * 100) / range;
+    newPerc = (percentage).toFixed(2) + '%';
+  }
+    
+  d3.select('#stopTop')
+      .attr('offset', newPerc);
+
+  if (rise > current || set < current) {
+    d3.selectAll('text')
+      .style('fill', 'rgba(255,255,255,0.7)')
+    d3.select('#sliderHandle')
+      .style('stroke', 'rgba(255,255,255,0.1)')
+    d3.selectAll('#placeName, #attribution, #attributionLink')
+      .style('color', 'rgba(255,255,255,0.8)')
+  } else {
+    if (rise < current || set > current) {
+      d3.selectAll('text')
+        .style('fill', 'rgba(0,0,0,0.7)')
+      d3.select('#sliderHandle')
+        .style('stroke', 'rgba(255,255,255,0)')
+        .style('fill', 'url(#mainGradient)')
+      d3.selectAll('#placeName, #attribution, #attributionLink')
+        .style('color', '#111111')
+    }
+  }
+}
+
+function initButtons() {
+  const cityBtns = document.querySelectorAll(".cityBtn");
+  for (let i = 0; i < cityBtns.length; i++) {
+    cityBtns[i].addEventListener("click", event => {
+      newPosition(this.event.target.dataset.lng, this.event.target.dataset.lat);
+      const btnText = event.target.textContent;
+      if (btnText === 'Toronto') {
+        placeName.innerHTML = 'Toronto, Ontario, Canada';
+      } else if (btnText === 'Panama') {
+        placeName.innerHTML = 'Panama City, Panamá, Panama';
+      } else if (btnText === 'Helsinki') {
+        placeName.innerHTML = 'Helsinki, Uusimaa, Finland';
+      } else if (btnText === 'Singapore') {
+        placeName.innerHTML = 'Singapore';
+      }
+    });
+  };
+}
+
+newPosition(mapCenter[0], mapCenter[1]);
+
+window.onload = (event) => {
+  initButtons();
+};
+
+</script>
+</body>
+</html>
