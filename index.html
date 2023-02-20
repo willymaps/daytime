@@ -57,6 +57,7 @@ let handle_radius = 10,
   handle_padding = 10,
   slider_height = 50,
   axis_height = 20;
+  label_width = 16;
 
 //Plot SVG
 const width = window.innerWidth;
@@ -223,29 +224,39 @@ function buildScales(hours) {
 
   if (initBuild) {
     initBuild = false;
-    range_svg.append("text")
+
+    range_svg.append("svg")
       .attr("id", "sunriseLabel")
       .attr("class", "x label")
-      .attr("text-anchor", "middle")
-      .attr("x", sunriseLabel)
-      .attr("transform", "translate(0, " + (range_height+20) + ")")
-      .text("☀↑");
+      .attr("x", sunriseLabel-label_width)
+      .attr("y", range_height)
+      .attr('width', 32)
+      .attr('height', 18)
+      .attr('viewbox', '0 0 32 18')
+      .append('path')
+        .attr('d', 'M18.239,8.952c0,.226-.184,.411-.411,.411h-4.316c-.088,.798-.403,1.521-.887,2.11l3.061,3.061c.16,.16,.16,.421,0,.581-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12l-3.063-3.063c-.59,.477-1.312,.786-2.108,.87v4.336c0,.227-.184,.411-.411,.411s-.411-.184-.411-.411v-4.334c-.799-.08-1.524-.386-2.118-.862l-3.053,3.053c-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12c-.16-.16-.16-.421,0-.581l3.049-3.049c-.489-.591-.808-1.318-.897-2.122H1.217c-.226,0-.411-.184-.411-.411s.184-.411,.411-.411H5.504c.077-.814,.388-1.551,.875-2.153L3.359,3.368c-.16-.16-.16-.421,0-.581s.421-.16,.581,0l3.018,3.018c.6-.492,1.338-.81,2.153-.891V.646c0-.226,.184-.411,.411-.411s.411,.184,.411,.411V4.916c.812,.085,1.547,.405,2.143,.899l3.028-3.028c.16-.16,.421-.16,.581,0s.16,.421,0,.581l-3.032,3.032c.481,.599,.789,1.332,.865,2.141h4.309c.227,0,.411,.184,.411,.411ZM31.074,3.945L27.626,.496c-.076-.076-.178-.118-.287-.12-.126,.022-.216,.04-.297,.12l-3.449,3.449c-.16,.16-.16,.421,0,.581s.421,.16,.581,0l2.748-2.748v15.575c0,.226,.184,.411,.411,.411s.411-.184,.411-.411V1.776l2.748,2.75c.16,.16,.421,.16,.581,0s.16-.421,0-.581Z')
 
-    range_svg.append("text")
+    range_svg.append("svg")
       .attr("id", "sunsetLabel")
       .attr("class", "x label")
-      .attr("text-anchor", "middle")
-      .attr("x", sunsetLabel)
-      .attr("transform", "translate(0, " + (range_height+20) + ")")
-      .text("☀↓");
+      .attr("x", sunsetLabel-label_width)
+      .attr("y", range_height)
+      .attr('width', 32)
+      .attr('height', 18)
+      .attr('viewbox', '0 0 32 18')
+      .append('path')
+        .attr('d', 'M18.239,8.952c0,.226-.184,.411-.411,.411h-4.316c-.088,.798-.403,1.521-.887,2.11l3.061,3.061c.16,.16,.16,.421,0,.581-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12l-3.063-3.063c-.59,.477-1.312,.786-2.108,.87v4.336c0,.227-.184,.411-.411,.411s-.411-.184-.411-.411v-4.334c-.799-.08-1.524-.386-2.118-.862l-3.053,3.053c-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12c-.16-.16-.16-.421,0-.581l3.049-3.049c-.489-.591-.808-1.318-.897-2.122H1.217c-.226,0-.411-.184-.411-.411s.184-.411,.411-.411H5.504c.077-.814,.388-1.551,.875-2.153L3.359,3.368c-.16-.16-.16-.421,0-.581s.421-.16,.581,0l3.018,3.018c.6-.492,1.338-.81,2.153-.891V.646c0-.226,.184-.411,.411-.411s.411,.184,.411,.411V4.916c.812,.085,1.547,.405,2.143,.899l3.028-3.028c.16-.16,.421-.16,.581,0s.16,.421,0,.581l-3.032,3.032c.481,.599,.789,1.332,.865,2.141h4.309c.227,0,.411,.184,.411,.411Zm5.355,5.243l3.447,3.449c.076,.076,.178,.118,.287,.12,.126-.022,.216-.04,.297-.12l3.449-3.449c.16-.16,.16-.421,0-.581s-.421-.16-.581,0l-2.748,2.748V.786c0-.226-.184-.411-.411-.411s-.411,.184-.411,.411v15.577l-2.748-2.75c-.16-.16-.421-.16-.581,0s-.16,.421,0,.581Z')
 
-    range_svg.append("text")
+    range_svg.append("svg")
       .attr("id", "noonLabel")
       .attr("class", "x label")
-      .attr("text-anchor", "middle")
-      .attr("x", noonLabel)
-      .attr("transform", "translate(0, " + (range_height+20) + ")")
-      .text("☀");
+      .attr("x", noonLabel-label_width)
+      .attr("y", range_height)
+      .attr('width', 32)
+      .attr('height', 18)
+      .attr('viewbox', '0 0 32 18')
+      .append('path')
+        .attr('d', 'M24.716,8.952c0,.226-.184,.411-.411,.411h-4.316c-.088,.798-.403,1.521-.887,2.11l3.061,3.061c.16,.16,.16,.421,0,.581-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12l-3.063-3.063c-.59,.477-1.312,.786-2.108,.87v4.336c0,.227-.184,.411-.411,.411s-.411-.184-.411-.411v-4.334c-.799-.08-1.524-.386-2.118-.862l-3.053,3.053c-.08,.08-.186,.12-.291,.12s-.21-.04-.291-.12c-.16-.16-.16-.421,0-.581l3.049-3.049c-.489-.591-.808-1.318-.897-2.122H7.695c-.226,0-.411-.184-.411-.411s.184-.411,.411-.411h4.288c.077-.814,.388-1.551,.875-2.153l-3.02-3.02c-.16-.16-.16-.421,0-.581s.421-.16,.581,0l3.018,3.018c.6-.492,1.338-.81,2.153-.891V.646c0-.226,.184-.411,.411-.411s.411,.184,.411,.411V4.916c.812,.085,1.547,.405,2.143,.899l3.028-3.028c.16-.16,.421-.16,.581,0s.16,.421,0,.581l-3.032,3.032c.481,.599,.789,1.332,.865,2.141h4.309c.227,0,.411,.184,.411,.411Z')
 
     const svgFilter = svg.append('filter')
       .attr('id', 'circleBlur')
@@ -322,17 +333,17 @@ function buildScales(hours) {
     d3.select('#sunriseLabel')
       .transition()
       .duration(500)
-      .attr("x", sunriseLabel);
+      .attr("x", sunriseLabel-label_width);
 
     d3.select('#sunsetLabel')
       .transition()
       .duration(500)
-      .attr("x", sunsetLabel);
+      .attr("x", sunsetLabel-label_width);
 
     d3.select('#noonLabel')
       .transition()
       .duration(500)
-      .attr("x", noonLabel);
+      .attr("x", noonLabel-label_width);
 
     d3.select('#sliderHandleHidden')
       .transition()
@@ -452,6 +463,9 @@ function changeTextColor(rise, noon, set, current) {
   if (rise > current || set < current) {
     d3.selectAll('text')
       .style('fill', 'rgba(255,255,255,0.7)')
+
+    d3.selectAll('#sunriseLabel path, #sunsetLabel path, #noonLabel path')
+      .style('fill', 'rgba(255,255,255,0.7)')
     d3.select('#sliderHandle')
       .style('stroke', 'rgba(255,255,255,0.1)')
     d3.selectAll('#placeName, #attribution, #attributionLink')
@@ -459,6 +473,8 @@ function changeTextColor(rise, noon, set, current) {
   } else {
     if (rise < current || set > current) {
       d3.selectAll('text')
+        .style('fill', 'rgba(0,0,0,0.7)')
+      d3.selectAll('#sunriseLabel path, #sunsetLabel path, #noonLabel path')
         .style('fill', 'rgba(0,0,0,0.7)')
       d3.select('#sliderHandle')
         .style('stroke', 'rgba(255,255,255,0)')
