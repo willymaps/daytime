@@ -282,8 +282,11 @@ function buildScales(hours) {
       .attr("r", (handle_radius*2.5))
       .style('fill', 'rgba(255,255,255,0)')
       .call(d3.drag()
-        .on("drag", dragged)
+        .on("start", (event) => dragged(event))
+        .on("drag", (event) => dragged(event))
+        .on("end", (event) => dragged(event))
     );
+
 
     svg.append("circle")
       .attr("id", "sliderHandleBlur")
@@ -304,7 +307,6 @@ function buildScales(hours) {
       .attr("cy", 50)
       .attr("r", handle_radius)
       .style('fill', 'url(#mainGradient)')
-      // .style('stroke', 'rgba(0,0,0,0.2)')
       .style('pointer-events', 'none');
 
     // the label
@@ -367,11 +369,11 @@ function buildScales(hours) {
     return point_a + " " + point_b + " " + point_c;
   }
 
-  function dragged() {
-    let coordinates = [0, 0];
-    coordinates = d3.pointer(event);
+  function dragged(e) {
+    let coordinates;
+    coordinates = [e.x, e.y];
 
-    let x = coordinates[0]-50;
+    let x = coordinates[0];
     x = x > range_width ? range_width :
       x < 0 ? 0 :
       x;
