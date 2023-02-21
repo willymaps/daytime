@@ -6,6 +6,6 @@ A stylized range slider that represents sunrise/sunet based on location and curr
 
 Built using:
 - [D3](https://d3js.org/)
-- [Lumon](https://moment.github.io/luxon/#/)
+- [Luxon](https://moment.github.io/luxon/#/)
 - [SunCalc](https://github.com/mourner/suncalc)
 - [Mapbox](https://github.com/mapbox/mapbox-gl-geocoder)
