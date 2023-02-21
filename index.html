@@ -87,6 +87,7 @@ const geocoder = new MapboxGeocoder({
   accessToken: accessToken,
   types: 'country,region,place',
   limit: 2,
+  bbox: [-180, -60, 180, 90],
   collapsed: true
 });
 
@@ -146,6 +147,7 @@ async function getTimeZone(lng, lat) {
   }
   catch {
     console.log('Could not find location. Try replacing the accessToken with your own.');
+    placeName.innerHTML = 'Sorry, could not find time zone';
     return {
       lng: mapCenter[0],
       lat: mapCenter[1],
